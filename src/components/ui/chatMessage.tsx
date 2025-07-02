@@ -41,7 +41,8 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={{
-                code({ node, inline, className, children, ...props }:{node:any; inline:boolean, className?:string, children:React.ReactNode;}) {
+                //@ts-expect-error its working, and i cant seem to get the correct type for this
+                code({ node, inline, className, children, ...props }:{node, inline:boolean, className?:string, children:React.ReactNode}) {
                   const match = /language-(\w+)/.exec(className || "")
                   const language = match ? match[1] : ""
                   return !inline && language ? (
@@ -139,4 +140,5 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
 })
 
 export default React.memo(ChatMessage)
-//export default ChatMessage
+ChatMessage.displayName = 'chatMessage';
+

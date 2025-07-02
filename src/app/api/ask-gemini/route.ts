@@ -1,6 +1,12 @@
 import { GoogleGenAI } from '@google/genai';
 import { NextRequest } from 'next/server';
 
+export type Message = {
+  id: string
+  content: string|null
+  role: "user" | "assistant"
+}
+
 export async function POST(req: NextRequest) {
   const { input, model } = await req.json();
 
@@ -12,7 +18,7 @@ export async function POST(req: NextRequest) {
     responseMimeType: 'text/plain',
   };
 
-  const historyMessages = (input.history ?? []).map((msg: any) => ({
+  const historyMessages = (input.history ?? []).map((msg: Message) => ({
     role: msg.role === "assistant" ? "model" : "user",
     parts: [{ text: msg.content }],
   })); 

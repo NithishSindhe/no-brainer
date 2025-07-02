@@ -5,3 +5,4 @@ export const Input = React.forwardRef<HTMLTextAreaElement, React.TextareaHTMLAtt
   return <textarea ref={ref} className={`${baseClasses} ${className}`} {...props} />
 })
 
+Input.displayName = 'Input';

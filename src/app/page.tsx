@@ -77,7 +77,7 @@ export default function ChatInterface() {
     setChats((prev) =>
       prev.map((prev) => prev.id === selectedChatId ? { ...prev, messages: [...messages] } : prev).sort((a,b) => new Date(b.createTime).getTime() - new Date(a.createTime).getTime())
     );
-  }, [messages])
+  }, [messages,selectedChatId])
 
   useEffect(() => {
     adjustHeight()
@@ -131,7 +131,7 @@ export default function ChatInterface() {
     if (!reader) return
 
     const id = (Date.now() + 1).toString()
-    var fullMessage = ''
+    let fullMessage = ''
     while (true) {
       const { value, done } = await reader.read()
       if (done) break
@@ -186,9 +186,9 @@ export default function ChatInterface() {
       handleSendMessage()
     }
   }
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }
+  // const scrollToBottom = () => {
+  //   messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  // }
   const stickToTop = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth",block:"end" })
   }
