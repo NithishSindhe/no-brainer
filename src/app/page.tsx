@@ -1,103 +1,422 @@
-import Image from "next/image";
+"use client"
+import type React from "react"
 
-export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+import { useEffect, useRef } from "react"
+import ChatMessage from "~/components/ui/chatMessage"
+import { Search, Paperclip, ChevronDown, Sparkles, Compass, Code, GraduationCap, SendHorizontal, StopCircle } from "lucide-react"
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+import { useState } from "react"
+import {
+  Menu,
+  Sun,
+  Moon,
+  User,
+} from "lucide-react"
+import { Button } from "~/components/ui/button"
+import ChatSearchBar from "~/components/ui/chatSearchBar"
+
+import type { Message } from "~/components/ui/chatMessage"
+
+type Chat = {
+  id: string
+  title: string|null
+  messages: Message[]
+  createTime: string // For ISO 8601 string, e.g., "2023-10-27T10:00:00.000Z"
 }
+
+const defaultMessage = {
+  id:"default",
+  content:null,
+  role: "assistant" as const 
+}
+
+export default function ChatInterface() {
+  const messageInputRef = useRef<HTMLTextAreaElement>(null)
+  const streamingMessageRef = useRef<HTMLDivElement>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [isDark, setIsDark] = useState(true)
+  const [chats, setChats] = useState<Chat[]>([])
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(chats[0]?.id || null);
+
+  const [question, setQuestion] = useState<string>("")
+  const [messages, setMessages] = useState<Array<Message>>([])
+  const [message, setMessage] = useState<Message>(defaultMessage)
+  const [streaming, setStreaming] = useState(false)
+
+  const actionButtons = [
+    { icon: Sparkles, label: "Create", color: "text-purple-400" },
+    { icon: Compass, label: "Explore", color: "text-blue-400" },
+    { icon: Code, label: "Code", color: "text-green-400" },
+    { icon: GraduationCap, label: "Learn", color: "text-orange-400" },
+  ]
+
+  const sampleQuestions = [
+    "How does AI work?",
+    "Are black holes real?",
+    'How many Rs are in the word "strawberry"?',
+    "What is the meaning of life?",
+  ]
+
+  // useEffect(() => {
+  //   if (streaming) {
+  //     const interval = setInterval(() => {
+  //       streamingMessageRef.current?.scrollIntoView({
+  //         behavior: "smooth",
+  //         block: "start", // aligns the top of element to top of container
+  //       });
+  //     }, 100); // every 100ms for smooth tracking
+  //     return () => clearInterval(interval);
+  //   }
+  // }, [streaming]);
+
+  useEffect(() => {
+    //scrollToBottom()
+    //update the selectedchat's messages 
+    stickToTop()
+    setChats((prev) =>
+      prev.map((prev) => prev.id === selectedChatId ? { ...prev, messages: [...messages] } : prev).sort((a,b) => new Date(b.createTime).getTime() - new Date(a.createTime).getTime())
+    );
+  }, [messages])
+
+  useEffect(() => {
+    adjustHeight()
+  },[question])
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Check if user is not already typing in an input field
+      const activeElement = document.activeElement
+      const isTypingInInput = activeElement && (activeElement.tagName === "INPUT" || activeElement.tagName === "TEXTAREA")
+      if(event.key.toLowerCase() === "k") {
+        // Only focus if not already typing and message input exists and is visible
+        if (!isTypingInInput && messageInputRef.current) {
+          event.preventDefault()
+          messageInputRef.current.focus()
+        }
+      }
+    }
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        messageInputRef?.current?.blur()
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown)
+    document.addEventListener("keydown", handleEscape)
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown)
+      document.removeEventListener("keydown", handleEscape)
+    }
+  }, [])
+
+  const askGemini = async () => {
+    const selectedChat = chats.find(chat => chat.id === selectedChatId)
+    const res = await fetch('/api/ask-gemini', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        input: {
+          question,
+          history: selectedChat?.messages ?? []
+        },
+        model: 'gemini-2.5-flash',
+      }),
+    })
+
+    const reader = res.body?.getReader()
+    const decoder = new TextDecoder()
+
+    if (!reader) return
+
+    const id = (Date.now() + 1).toString()
+    var fullMessage = ''
+    while (true) {
+      const { value, done } = await reader.read()
+      if (done) break
+      const chunk = decoder.decode(value)
+      fullMessage = fullMessage+chunk
+      setMessage(prev => { 
+        if(prev.content != null) return {id:id, content:prev.content+chunk, role:"assistant"} 
+        return {id:id, content:chunk, role:"assistant"} 
+      })
+    }
+
+    const aiMessage = {
+      id: id,
+      content: fullMessage,
+      role: "assistant" as const,
+    }
+    setMessages((prev) => [...prev, aiMessage])
+  }
+
+  const handleSendMessage = async (e?: React.FormEvent) => {
+    if(streaming) return 
+    e?.preventDefault()
+    //scrollToBottom()
+    stickToTop()
+    if (!question.trim()) return
+    const userMessage = {
+      id: Date.now().toString(),
+      content: question.trim(),
+      role: "user" as const,
+    }
+    // Add user message
+    setMessages((prev) => [...prev, userMessage])
+    setQuestion('')
+    setStreaming(true)
+    await askGemini()
+    setStreaming(false)
+    setMessage(defaultMessage)
+    // if the message was in a new window then create a new chat and bind the current messages to that chat
+    // how do you know if the message was in a new window
+    if(messages.length === 0) {
+      //this is new chat action, create a new chat with a title
+      const id = (Date.now() + 2).toString()
+      const newChat:Chat = {id:id,title:id,messages:[...messages, userMessage],createTime:new Date().toISOString()}
+      setChats(prev => [...prev, newChat].sort( (a,b)=>new Date(b.createTime).getTime() - new Date(a.createTime).getTime()));
+      setSelectedChatId(id)
+    }
+  }
+
+  const handleEnter = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault()
+      handleSendMessage()
+    }
+  }
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }
+  const stickToTop = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth",block:"end" })
+  }
+
+  const adjustHeight = () => {
+    const textarea = messageInputRef.current
+    if (textarea) {
+      textarea.style.height = "auto"
+      const newHeight = Math.min(Math.max(textarea.scrollHeight, 40), 200)
+      textarea.style.height = `${newHeight}px`
+    }
+  }
+
+  const createNewChat = () => {
+    const id = Date.now().toString();
+    const newChat: Chat = {
+      id,
+      title: null,
+      messages: [],
+      createTime:new Date().toISOString()
+    };
+    //setChats((prev) => [...prev, newChat]);
+    setChats(prev => [...prev, newChat].sort( (a,b)=>new Date(b.createTime).getTime() - new Date(a.createTime).getTime()));
+    setSelectedChatId(id);
+    setMessages([]);
+    setQuestion("");
+    setMessage(defaultMessage);
+    setStreaming(false);
+  };
+  return (
+    <div className={`flex h-screen ${isDark ? "dark" : ""}`}>
+      {/* Sidebar */}
+      <div className={`${sidebarOpen ? "w-64 opacity-100" : "w-0 opacity-0"} 
+        transition-all duration-300 ease-in-out
+        text-nowrap
+        bg-gray-900 border-r border-gray-700 flex flex-col overflow-hidden`} 
+      >
+        {/* Sidebar Header */}
+        <div className="p-4 ">
+          <div className="flex items-center justify-between mb-4">
+            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-1 hover:bg-gray-800 rounded">
+              <Menu className="w-5 h-5 text-gray-400" />
+            </button>
+            <div className="text-white font-semibold">No Brainer</div>
+            <div className="flex items-center gap-2">
+              <button className="p-1 hover:bg-gray-800 rounded">
+              </button>
+              <button onClick={() => setIsDark(!isDark)} className="p-1 hover:bg-gray-800 rounded">
+                {isDark ? <Sun className="w-4 h-4 text-gray-400" /> : <Moon className="w-4 h-4 text-gray-400" />}
+              </button>
+            </div>
+          </div>
+
+          <Button onClick={createNewChat} className="w-full bg-purple-600 hover:bg-purple-700 text-gray-200 !font-bold ">
+            New Chat
+          </Button>
+        </div>
+
+        {/* Search */}
+        <ChatSearchBar></ChatSearchBar>
+        {/* Spacer */}
+        <div className="overflow overflow-auto flex-1">
+        <div className="p-4">
+          {[...chats].sort((a, b) => new Date(b.createTime).getTime() - new Date(a.createTime).getTime())
+            .map(chat => {
+            if(chat.title != null){
+              return <button
+                key={chat.id}
+                onClick={() => {
+                  setSelectedChatId(chat.id)
+                  chats.some(element => {
+                    if(element.id === chat.id) {
+                      setMessages(element.messages)
+                      return true
+                    }
+                  })
+                }
+                }
+                className={`cursor cursor-pointer block w-full text-left text-sm px-2 py-2 rounded-lg ${
+                  chat.id === selectedChatId ? "bg-gray-800" : "hover:bg-gray-800"
+                }`}
+              >
+                <div className="truncate">
+                  <span className="overflow-hidden text-ellipsis text-sm ">{chat.title}</span>
+                </div>
+              </button>
+            }
+          })}
+        </div>
+        </div>
+        {/* User Profile */}
+        <div className="p-4 border-t border-gray-700">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+              <User className="w-4 h-4 text-white" />
+            </div>
+            <div className="flex-1">
+              <div className="text-white text-sm font-medium">NITHISH SINDHE</div>
+              <div className="text-gray-400 text-xs">Free</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {/* Main Content */}
+      <div className="relative flex-1 bg-gray-800 flex flex-col">
+        {/* Header */}
+        {!sidebarOpen && (
+          <div className="p-4 border-none border-gray-700 flex items-center justify-between fixed top-0 left-0 right-0 z-50 bg-transparent">
+              <button onClick={() => setSidebarOpen(true)} className="p-1 hover:bg-gray-700 rounded">
+                <Menu className="w-5 h-5 text-gray-400" />
+              </button>
+            <div className="flex-1"></div>
+            <div className="flex items-center gap-2">
+              <button className="p-1 hover:bg-gray-700 rounded">
+              </button>
+              <button onClick={() => setIsDark(!isDark)} className="p-1 hover:bg-gray-700 rounded">
+                {isDark ? <Sun className="w-4 h-4 text-gray-400" /> : <Moon className="w-4 h-4 text-gray-400" />}
+              </button>
+            </div>
+          </div>
+        )}
+        {/* Chat Area */}
+        <div className="w-full flex flex-1 overflow-y-auto p-4 pb-24 space-y-4 justify-center">
+          <div className="max-w-4xl flex flex-col flex-1 overflow-y-auto p-4 space-y-4 chat-container">
+            {messages.length === 0 ? (
+              <div className="flex-1 flex flex-col items-center justify-center p-8">
+                <div className="max-w-2xl w-full text-center space-y-8">
+                  {/* Welcome Message */}
+                  <h1 className="text-3xl font-semibold text-white mb-8">How can I help you, NITHISH?</h1>
+                  {/* Action Buttons */}
+                  <div className="flex justify-center gap-6 mb-12">
+                    {actionButtons.map((action, index) => (
+                      <button
+                        key={index}
+                        className="flex flex-col items-center gap-2 p-4 hover:bg-gray-700 rounded-lg transition-colors"
+                      >
+                        <action.icon className={`w-6 h-6 ${action.color}`} />
+                        <span className="text-gray-300 text-sm">{action.label}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Sample Questions */}
+                  <div className="space-y-3">
+                    {sampleQuestions.map((qstion, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setQuestion(qstion)}
+                        className="block w-full text-left p-3 text-gray-300 hover:bg-gray-700 rounded-lg transition-colors"
+                      >
+                        {qstion}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              // Chat messages
+              <div className="flex-1 p-4 space-y-4">
+                {messages.map((msg) => (
+                  <ChatMessage key={msg.id} msg={msg}/>
+                ))}
+                {streaming?<ChatMessage key={message.id} msg={message} ref={streamingMessageRef}></ChatMessage>:<></>}
+                <div ref={messagesEndRef} />
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="absolute bottom-0 left-0 right-0 z-10 border-none bg-gray-800 p-4">
+          {/* Message Input */}
+          <div className="max-w-4xl mx-auto">
+            <form onSubmit={handleSendMessage}>
+              <div className="relative">
+                <textarea
+                  ref={messageInputRef}
+                  value={question}
+                  onChange={(e) => setQuestion(e.target.value)}
+                  onKeyDown={handleEnter}
+                  placeholder="Type your message here...(K)"
+                  className="
+                    resize-none 
+                    w-full 
+                    min-h-[40px]
+                    max-h-[200px]
+                    rounded-md 
+                    border-none 
+                    bg-gray-700
+                    px-3 
+                    py-2 
+                    text-sm 
+                    text-white 
+                    placeholder:text-gray-400 
+                    focus-visible:outline-none 
+                    disabled:cursor-not-allowed 
+                    disabled:opacity-50 
+                    transition-all 
+                    duration-600 
+                    ease-in-out
+                    overflow-auto
+                    leading-5
+                  "
+                  rows={1}
+                />
+              </div>
+              <div className="flex items-center justify-between mt-2">
+                <div className="flex items-center gap-2">
+                    <button className="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-300 cursor-pointer" type="button">
+                        Gemini 2.5 Flash
+                        <ChevronDown className="w-3 h-3" />
+                    </button>
+                    <button className="p-1 hover:bg-gray-700 rounded">
+                        <Search className="w-4 h-4 text-gray-400" type="button"/>
+                    </button>
+                </div>
+                <div className="flex items-center gap-2"> 
+                    <button className="p-1 hover:bg-gray-600 rounded" type="button">
+                        <Paperclip className="w-4 h-4 text-gray-400" />
+                    </button>
+                    <button className="p-1 hover:bg-gray-600 rounded" disabled={streaming} type="submit">
+                    {streaming?<StopCircle className="w-4 h-4 text-gray-500" />:<SendHorizontal className="w-4 h-4 text-gray-400"/>}
+                    </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
