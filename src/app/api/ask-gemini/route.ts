@@ -1,5 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
 import { NextRequest } from 'next/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
 
 export type Message = {
   id: string
@@ -9,6 +10,14 @@ export type Message = {
 
 export async function POST(req: NextRequest) {
   const { input, model } = await req.json();
+  const { userId } = await auth();
+  if (!userId) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+  else{
+    const user = await currentUser();
+    console.log('authenticated user:',user?.emailAddresses[0]?.emailAddress)
+  }
 
   const ai = new GoogleGenAI({
     apiKey: process.env.GEMINI_API_KEY!,

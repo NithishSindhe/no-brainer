@@ -3,7 +3,10 @@ import type React from "react"
 
 import { useEffect, useRef } from "react"
 import ChatMessage from "~/components/ui/chatMessage"
-import { Search, Paperclip, ChevronDown, Sparkles, Compass, Code, GraduationCap, SendHorizontal, StopCircle } from "lucide-react"
+import { Search, Paperclip, ChevronDown, Sparkles, Compass, Code, GraduationCap, SendHorizontal, StopCircle,LogInIcon } from "lucide-react"
+import { SignInButton, SignUpButton, SignedIn, SignedOut, UserButton, } from '@clerk/nextjs'
+import { useUser } from '@clerk/nextjs';
+
 
 import { useState } from "react"
 import {
@@ -38,6 +41,7 @@ export default function ChatInterface() {
   const [isDark, setIsDark] = useState(true)
   const [chats, setChats] = useState<Chat[]>([])
   const [selectedChatId, setSelectedChatId] = useState<string | null>(chats[0]?.id || null);
+  const { user, isSignedIn } = useUser();
 
   const [question, setQuestion] = useState<string>("")
   const [messages, setMessages] = useState<Array<Message>>([])
@@ -280,15 +284,23 @@ export default function ChatInterface() {
         </div>
         </div>
         {/* User Profile */}
-        <div className="p-4 border-t border-gray-700">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-              <User className="w-4 h-4 text-white" />
-            </div>
-            <div className="flex-1">
-              <div className="text-white text-sm font-medium">NITHISH SINDHE</div>
-              <div className="text-gray-400 text-xs">Free</div>
-            </div>
+        <div className="p-4 flex items-center justify-center">
+          <div className="w-full flex items-center gap-3">
+            <SignedOut>
+              <SignInButton mode="modal">
+                <button className="text-gray-200 text-center hover:bg-gray-700  font-bold text-sm py-2 px-4 rounded-lg flex items-center gap-2 cursor-pointer w-full justify-center">
+                <LogInIcon size="1.25em"/> Login
+                </button>
+              </SignInButton>
+            </SignedOut>
+            <SignedIn>
+              <div className="flex items-center gap-2">
+                <UserButton />
+                <div className="text-white text-sm font-medium">
+                  {user?.fullName}
+                </div>
+              </div>
+            </SignedIn>
           </div>
         </div>
       </div>

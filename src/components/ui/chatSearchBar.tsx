@@ -61,7 +61,7 @@ export default function ChatSearchBar() {
         />
           <Input
             ref={chatSearchRef}
-            placeholder="Search chats (cmd+k)"
+            placeholder="Search chats (search with /)"
             className="
               bg-[rgb(30,41,57)]
               text-nowrap
