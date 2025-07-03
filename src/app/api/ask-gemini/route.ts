@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   const { input, model } = await req.json();
   const { userId } = await auth();
   if (!userId) {
-    return new Response('Unauthorized', { status: 401 });
+    return new Response('Unauthorized. Please sign in to use features', { status: 401 });
   }
   else{
     const user = await currentUser();
