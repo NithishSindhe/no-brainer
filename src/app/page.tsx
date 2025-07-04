@@ -54,6 +54,8 @@ export default function ChatInterface() {
     { icon: Code, label: "Code", color: "text-green-400" },
     { icon: GraduationCap, label: "Learn", color: "text-orange-400" },
   ]
+  const [modelModalOpen, setModelModalOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const sampleQuestions = [
     "How does AI work?",
@@ -87,6 +89,26 @@ export default function ChatInterface() {
     adjustHeight()
   },[question])
 
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setModelModalOpen(false);
+      }
+    }
+
+    if (modelModalOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [modelModalOpen]);
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       // Check if user is not already typing in an input field
@@ -369,9 +391,9 @@ export default function ChatInterface() {
             )}
           </div>
         </div>
-        <div className="absolute bottom-0 left-0 right-0 z-10 border-none bg-gray-800 p-4">
+        <div className="absolute rounded-t-lg bottom-0 left-0 right-0 mx-auto max-w-4xl z-10 border-none backdrop-blur-sm bg-black/10 p-4 pb-0">
           {/* Message Input */}
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-4xl mx-auto backdrop-blur-sm bg-black/10 rounded-t-lg">
             <form onSubmit={handleSendMessage}>
               <div className="relative">
                 <textarea
@@ -382,12 +404,14 @@ export default function ChatInterface() {
                   placeholder="Type your message here...(K)"
                   className="
                     resize-none 
+                    rounded-t-lg
                     w-full 
                     min-h-[40px]
                     max-h-[200px]
                     rounded-md 
                     border-none 
-                    bg-gray-700
+                    bg-transparent
+                    bg-black/10
                     px-3 
                     py-2 
                     text-sm 
@@ -406,15 +430,41 @@ export default function ChatInterface() {
                 />
               </div>
               <div className="flex items-center justify-between mt-2">
-                <div className="flex items-center gap-2">
-                    <button className="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-300 cursor-pointer" type="button">
-                        Gemini 2.5 Flash
-                        <ChevronDown className="w-3 h-3" />
-                    </button>
-                    <button className="p-1 hover:bg-gray-700 rounded">
-                        <Search className="w-4 h-4 text-gray-400" type="button"/>
-                    </button>
+                <div ref={dropdownRef} className="relative flex items-center gap-2">
+                  {/* Dropdown Toggle */}
+                  <button
+                    type="button"
+                    onClick={() => setModelModalOpen(!modelModalOpen)}
+                    className="flex px-2 py-1 items-center gap-1 text-sm text-gray-400 hover:text-gray-300 cursor-pointer"
+                  >
+                    Gemini 2.5 Flash
+                    <ChevronDown
+                      className={`pt-0 pb-1 w-3 h-3 transform transition-transform ${
+                        modelModalOpen ? "" : "rotate-180"
+                      }`}
+                    />
+                  </button>
+                  {/* model search dropdown menu */}
+                  {modelModalOpen && (
+                    <div
+                      className="absolute bottom-full mb-2 left-0 z-50 w-56 p-3 rounded-lg backdrop-blur-md bg-gray-800/70 border border-gray-700 shadow-lg"
+                    >
+                      <p className="text-sm text-gray-300">More models coming soon</p>
+                    </div>
+                  )}
+                  <button className="p-1 hover:bg-gray-700 rounded">
+                    <Search className="w-4 h-4 text-gray-400" />
+                  </button>
                 </div>
+                {/* <div className="flex items-center gap-2"> */}
+                {/*     <button className="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-300 cursor-pointer" type="button"> */}
+                {/*         Gemini 2.5 Flash */}
+                {/*         <ChevronDown className="w-3 h-3" /> */}
+                {/*     </button> */}
+                {/*     <button className="p-1 hover:bg-gray-700 rounded"> */}
+                {/*         <Search className="w-4 h-4 text-gray-400" type="button"/> */}
+                {/*     </button> */}
+                {/* </div> */}
                 <div className="flex items-center gap-2"> 
                     <button className="p-1 hover:bg-gray-600 rounded" type="button">
                         <Paperclip className="w-4 h-4 text-gray-400" />
