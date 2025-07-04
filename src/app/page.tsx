@@ -329,7 +329,7 @@ export default function ChatInterface() {
               <div className="flex-1 flex flex-col items-center justify-center p-8">
                 <div className="max-w-2xl w-full text-center space-y-8">
                   {/* Welcome Message */}
-                  <h1 className="text-3xl font-semibold text-white mb-8">How can I help you, NITHISH?</h1>
+                  <h1 className="text-3xl font-semibold text-white mb-8">How can I help you, {isSignedIn?user?.firstName:"Stranger"}?</h1>
                   {/* Action Buttons */}
                   <div className="flex justify-center gap-6 mb-12">
                     {actionButtons.map((action, index) => (
