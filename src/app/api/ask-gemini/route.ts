@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
         });
 
         for await (const chunk of result) {
-          controller.enqueue(new TextEncoder().encode(chunk.text));
+          controller.enqueue(new TextEncoder().encode(`data: ${chunk.text}\n\n`));
         }
         controller.close();
       } catch (err) {
@@ -65,7 +65,8 @@ export async function POST(req: NextRequest) {
   return new Response(stream, {
     headers: {
       'Content-Type': 'text/plain',
-      'Transfer-Encoding': 'chunked',
+      'Cache-Control': 'no-cache',
+      // 'Transfer-Encoding': 'chunked',
     },
   });
 }
