@@ -64,9 +64,10 @@ export async function POST(req: NextRequest) {
 
   return new Response(stream, {
     headers: {
-      'Content-Type': 'text/plain',
+      'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
-      // 'Transfer-Encoding': 'chunked',
+      //'Transfer-Encoding': 'chunked',
+      'Connection': 'keep-alive'
     },
   });
 }
