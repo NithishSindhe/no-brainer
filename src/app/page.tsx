@@ -42,6 +42,7 @@ export default function ChatInterface() {
   const [chats, setChats] = useState<Chat[]>([])
   const [selectedChatId, setSelectedChatId] = useState<string | null>(chats[0]?.id || null);
   const { user, isSignedIn } = useUser();
+  const [aiModel, setAiModel ] = useState('gemini-2.5-flash')
 
   const [question, setQuestion] = useState<string>("")
   const [messages, setMessages] = useState<Array<Message>>([])
@@ -147,7 +148,7 @@ export default function ChatInterface() {
           question,
           history: selectedChat?.messages ?? []
         },
-        model: 'gemini-2.5-flash',
+        model:aiModel,
       }),
     })
 
@@ -437,43 +438,63 @@ export default function ChatInterface() {
                     onClick={() => setModelModalOpen(!modelModalOpen)}
                     className="flex px-2 py-1 items-center gap-1 text-sm text-gray-400 hover:text-gray-300 cursor-pointer"
                   >
-                    Gemini 2.5 Flash
+                    {aiModel === 'gemini-2.5-pro' ? 'Gemini 2.5 Pro' : 'Gemini 2.5 Flash'}
                     <ChevronDown
                       className={`pt-0 pb-1 w-3 h-3 transform transition-transform ${
-                        modelModalOpen ? "" : "rotate-180"
+                        modelModalOpen ? '' : 'rotate-180'
                       }`}
                     />
                   </button>
-                  {/* model search dropdown menu */}
+
+                  {/* Model dropdown menu */}
                   {modelModalOpen && (
-                    <div
-                      className="absolute bottom-full mb-2 left-0 z-50 w-56 p-3 rounded-lg backdrop-blur-md bg-gray-800/70 border border-gray-700 shadow-lg"
-                    >
-                      <p className="text-sm text-gray-300">More models coming soon</p>
+                    <div className="absolute bottom-full mb-2 left-0 z-50 w-56 p-3 rounded-lg backdrop-blur-md bg-gray-800/70 border border-gray-700 shadow-lg">
+                      <button
+                        onClick={() => {
+                          setAiModel('gemini-2.5-flash');
+                          setModelModalOpen(false);
+                        }}
+                        className={`block w-full text-left text-sm px-2 py-1 rounded hover:bg-gray-700 text-gray-300 ${
+                          aiModel === 'gemini-2.5-flash' ? 'bg-gray-700' : ''
+                        }`}
+                      >
+                        Gemini 2.5 Flash
+                      </button>
+                      <button
+                        onClick={() => {
+                          setAiModel('gemini-2.5-pro');
+                          setModelModalOpen(false);
+                        }}
+                        className={`block w-full text-left text-sm px-2 py-1 rounded hover:bg-gray-700 text-gray-300 ${
+                          aiModel === 'gemini-2.5-pro' ? 'bg-gray-700' : ''
+                        }`}
+                      >
+                        Gemini 2.5 Pro
+                      </button>
                     </div>
                   )}
+
+                  {/* Search button */}
                   <button className="p-1 hover:bg-gray-700 rounded">
                     <Search className="w-4 h-4 text-gray-400" />
                   </button>
                 </div>
-                {/* <div className="flex items-center gap-2"> */}
-                {/*     <button className="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-300 cursor-pointer" type="button"> */}
-                {/*         Gemini 2.5 Flash */}
-                {/*         <ChevronDown className="w-3 h-3" /> */}
-                {/*     </button> */}
-                {/*     <button className="p-1 hover:bg-gray-700 rounded"> */}
-                {/*         <Search className="w-4 h-4 text-gray-400" type="button"/> */}
-                {/*     </button> */}
-                {/* </div> */}
-                <div className="flex items-center gap-2"> 
-                    <button className="p-1 hover:bg-gray-600 rounded" type="button">
-                        <Paperclip className="w-4 h-4 text-gray-400" />
-                    </button>
-                    <button className="p-1 hover:bg-gray-600 rounded" disabled={streaming} type="submit">
-                    {streaming?<StopCircle className="w-4 h-4 text-gray-500" />:<SendHorizontal className="w-4 h-4 text-gray-400"/>}
-                    </button>
+
+                {/* Action buttons */}
+                <div className="flex items-center gap-2">
+                  <button className="p-1 hover:bg-gray-600 rounded" type="button">
+                    <Paperclip className="w-4 h-4 text-gray-400" />
+                  </button>
+                  <button className="p-1 hover:bg-gray-600 rounded" disabled={streaming} type="submit">
+                    {streaming ? (
+                      <StopCircle className="w-4 h-4 text-gray-500" />
+                    ) : (
+                      <SendHorizontal className="w-4 h-4 text-gray-400" />
+                    )}
+                  </button>
                 </div>
               </div>
+
             </form>
           </div>
         </div>
