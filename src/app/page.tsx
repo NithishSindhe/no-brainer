@@ -102,9 +102,9 @@ export default function ChatInterface() {
 
   const createNewChat = () => {
     const cantCreate = chats.some(chat => {
-      if(chat.id === selectedChatId){
-        if(chat.messages.length === 0) return true
-        return false
+      if(chat.messages.length === 0) {
+        setSelectedChatId(chat.id)
+        return true
       }
     }) 
     if(cantCreate) return
