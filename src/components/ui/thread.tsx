@@ -1,23 +1,13 @@
 "use client";
-import { useEffect,useState,useRef } from "react"
+import askGeminiBackground from "~/lib/askGeminiBackground";
+import { useEffect,useState,useRef,useCallback,useMemo } from "react"
 import { useUser } from '@clerk/nextjs';
 import { Search, Paperclip, ChevronDown, Sparkles, Compass, Code, GraduationCap, SendHorizontal, StopCircle } from "lucide-react"
 import ChatMessage from "~/components/ui/chatMessage"
+import React from "react";
 
 import type { Message } from "~/components/ui/chatMessage"
 
-type Chat = {
-  id: string
-  title: string|null
-  messages: Message[]
-  createTime: string // For ISO 8601 string, e.g., "2023-10-27T10:00:00.000Z"
-}
-
-const defaultMessage = {
-  id:"default",
-  content:null,
-  role: "assistant" as const 
-}
 const actionButtons = [
   { icon: Sparkles, label: "Create", color: "text-purple-400" },
   { icon: Compass, label: "Explore", color: "text-blue-400" },
@@ -35,25 +25,29 @@ interface ThreadProps {
   chatId: string;
   onNewMessage: (chatId: string, newMessages: Message[]) => void;
   parentMessages: Message[];
+  appendChunkToLastMessage: (id:string, chunk:string) => void;
+  createNewAssistantMessage: (id:string) => void;
 }
 
-export default function Thread({ chatId, onNewMessage, parentMessages }: ThreadProps) {
-  const streamingMessageRef = useRef<HTMLDivElement>(null)
+export default React.memo(function Thread({ chatId, onNewMessage, parentMessages,appendChunkToLastMessage, createNewAssistantMessage }: ThreadProps) {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const messageInputRef = useRef<HTMLTextAreaElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const { user, isSignedIn } = useUser();
-  const [messages, setMessages] = useState<Message[]>(parentMessages)
   const [question, setQuestion] = useState<string>("")
-  const [message, setMessage] = useState<Message>(defaultMessage)
   const [streaming, setStreaming] = useState(false)
   const [aiModel, setAiModel ] = useState('gemini-2.5-flash')
   const [modelModalOpen, setModelModalOpen] = useState(false);
 
   useEffect(() => {
-    onNewMessage(chatId,messages)
-  }, [messages])
-
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({
+        behavior: 'instant', // Optional: for a smooth scrolling animation
+        block: 'end',       // Optional: aligns the end of the element with the end of the scrollable area
+                            // Other options: 'start', 'center', 'nearest'
+      });
+    }
+  },[])
   useEffect(() => {
     adjustHeight()
   },[question])
@@ -88,7 +82,7 @@ export default function Thread({ chatId, onNewMessage, parentMessages }: ThreadP
     }
   }
 
-  const handleSendMessage = async (e?: React.FormEvent) => {
+  const handleSendMessage = useCallback(async (e?: React.FormEvent) => {
     if(streaming) return 
     e?.preventDefault()
     if (!question.trim()) return
@@ -98,23 +92,20 @@ export default function Thread({ chatId, onNewMessage, parentMessages }: ThreadP
       role: "user" as const,
     }
     // Add user message
-    setMessages((prev) => [...prev, userMessage])
+    onNewMessage(chatId,[...parentMessages,userMessage])
     setQuestion('')
     setStreaming(true)
-    await askGemini()
-    setStreaming(false)
-    setMessage(defaultMessage)
-    // new chat should be handeled by the parent
-    // if the message was in a new window then create a new chat and bind the current messages to that chat
-    // how do you know if the message was in a new window
-    // if(messages.length === 0) {
-    //   //this is new chat action, create a new chat with a title
-    //   const id = (Date.now() + 2).toString()
-    //   const newChat:Chat = {id:id,title:id,messages:[...messages, userMessage],createTime:new Date().toISOString()}
-    //   setChats(prev => [...prev, newChat].sort( (a,b)=>new Date(b.createTime).getTime() - new Date(a.createTime).getTime()));
-    //   setSelectedChatId(id)
-    // }
-  }
+
+    askGeminiBackground({
+      chatId,
+      question,
+      history: parentMessages,
+      model: aiModel,
+      onStart: () => createNewAssistantMessage(chatId),
+      onChunk: (chunk:string) => appendChunkToLastMessage(chatId, chunk),
+      onDone: () => setStreaming(false),
+    });
+  },[streaming, question, chatId, parentMessages, onNewMessage ])
 
   const handleEnter = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -123,52 +114,17 @@ export default function Thread({ chatId, onNewMessage, parentMessages }: ThreadP
     }
   }
 
-  const askGemini = async () => {
-    const res = await fetch('/api/ask-gemini', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        input: {
-          question,
-          history: messages ?? []
-        },
-        model:aiModel,
-      }),
-    })
-
-    const reader = res.body?.getReader()
-    const decoder = new TextDecoder()
-
-    if (!reader) return
-
-    const id = (Date.now() + 1).toString()
-    let fullMessage = ''
-    while (true) {
-      const { value, done } = await reader.read()
-      if (done) break
-      const chunk = decoder.decode(value)
-      fullMessage = fullMessage+chunk
-      setMessage(prev => { 
-        if(prev.content != null) return {id:id, content:prev.content+chunk, role:"assistant"} 
-        return {id:id, content:chunk, role:"assistant"} 
-      })
-    }
-
-    const aiMessage = {
-      id: id,
-      content: fullMessage,
-      role: "assistant" as const,
-    }
-    setMessages((prev) => [...prev, aiMessage])
-  }
+  const renderedMessages = useMemo(() => (
+    parentMessages.map((msg,count) => (
+      <ChatMessage key={`${msg.id}${count}`} msg={msg} />
+    ))
+  ), [parentMessages]);
 
   return (
   <>
   <div className="w-full flex flex-1 overflow-y-auto p-4 pb-24 space-y-4 justify-center">
-    <div className="max-w-4xl flex flex-col flex-1 overflow-y-auto p-4 space-y-4 chat-container">
-      {messages.length === 0 ? (
+    <div className="max-w-4xl mx-auto flex-1 space-y-4 overflow-y-auto">
+      {parentMessages.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center p-8">
           <div className="max-w-2xl w-full text-center space-y-8">
             {/* Welcome Message */}
@@ -203,10 +159,7 @@ export default function Thread({ chatId, onNewMessage, parentMessages }: ThreadP
       ) : (
         // Chat messages
         <div className="flex-1 p-4 space-y-4">
-          {messages.map((msg) => (
-            <ChatMessage key={msg.id} msg={msg}/>
-          ))}
-          {streaming?<ChatMessage key={message.id} msg={message} ref={streamingMessageRef}></ChatMessage>:<></>}
+          {renderedMessages}
           <div ref={messagesEndRef} />
         </div>
       )}
@@ -297,4 +250,4 @@ export default function Thread({ chatId, onNewMessage, parentMessages }: ThreadP
   </div>
   </>
   );
-}
+})

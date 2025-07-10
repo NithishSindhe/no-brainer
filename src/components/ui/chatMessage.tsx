@@ -36,7 +36,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
         }`}
       >
         {msg.role === "assistant" ? (
-          msg.content?(
+          (msg.content && msg.content.trim() !== "")?(
           <div className="prose prose-invert max-w-none">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}

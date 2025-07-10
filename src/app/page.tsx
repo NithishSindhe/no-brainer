@@ -1,11 +1,12 @@
 "use client";
 import type React from "react"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useMemo, useCallback } from "react"
 import { LogInIcon } from "lucide-react"
 import { SignInButton, SignedIn, SignedOut, UserButton, } from '@clerk/nextjs'
 import { useUser } from '@clerk/nextjs';
 import Thread from "~/components/ui/thread";
+import ChatTitle from "~/components/ui/chatTitle";
 
 
 import { useState } from "react"
@@ -34,10 +35,15 @@ export default function ChatInterface() {
   const [chats, setChats] = useState<Chat[]>([])
   const [selectedChatId, setSelectedChatId] = useState<string | null>(chats[0]?.id || null);
   const { user, isSignedIn } = useUser();
+  const sortedChats = useMemo(() =>
+    [...chats].sort((a, b) => new Date(b.createTime).getTime() - new Date(a.createTime).getTime()),
+    [chats]
+  );
 
   const [question, setQuestion] = useState<string>("")
 
-  useEffect(() => {createNewChat()},[])
+  useEffect(() => { createNewChat() },[])
+  chats.forEach(chat => console.log(chat)) 
   
   // useEffect(() => {
   //   if (streaming) {
@@ -51,11 +57,69 @@ export default function ChatInterface() {
   //   }
   // }, [streaming]);
 
-  const onNewMessage = (chatId:string, newMessages:Message[]) => {
+  /**
+   * Updates the messages for a specific chat and re-sorts the chat list by most recent createTime.
+   * @param chatId - The ID of the chat to update.
+   * @param newMessages - The new messages to set for the chat.
+   */
+  const onNewMessage = useCallback((chatId:string, newMessages:Message[]) => {
     setChats((prev) =>
-      prev.map((prev) => prev.id === chatId ? { ...prev, messages: [...newMessages] } : prev).sort((a,b) => new Date(b.createTime).getTime() - new Date(a.createTime).getTime())
+      prev.map((prev) => prev.id === chatId ? { ...prev, messages: [...newMessages] } : prev)
     );
-  }
+  },[])
+
+  /**
+    * This function will create a new empty assistant message 
+    * @param id - id of the chat to add new assistant message to
+    */
+  const createNewAssistantMessage = useCallback((id:string) => {
+    setChats(prev =>  prev.map(chat => {
+      if(chat.id === id) {
+        const astMsg = {
+          id: Date.now().toString(),
+          content: '',
+          role: "assistant" as const,
+        }
+        return  {...chat, messages:[...chat.messages,astMsg]}
+      }
+      return chat 
+    }))
+  },[])
+
+  /** appends incoming message chunks to last message for given id 
+  * @param id - id of the chat that needs to be updated 
+  * @param chunk - message chunk
+  */
+  const appendChunkToLastMessage = useCallback((id:string, chunk:string) => {
+    setChats(prev => prev.map(chat => {
+      if(chat.id != id) return chat
+      const updatedMessages = [...chat.messages];
+      const lastIndex = updatedMessages.length - 1;
+      if (lastIndex >= 0) {
+        updatedMessages[lastIndex] = {
+          ...updatedMessages[lastIndex],//id and role remains same but content gets updated with new chunk
+          content: updatedMessages[lastIndex].content + chunk
+        };
+      }
+      return {
+        ...chat,
+        messages: updatedMessages
+      };
+    })
+    )
+  },[])
+
+  const changeTitle = useCallback((id: string, newTitle: string) => {
+    setChats(prev =>
+      prev.map(chat =>
+        chat.id === id ? { ...chat, title: newTitle } : chat
+      ).sort((a, b) =>
+        new Date(b.createTime).getTime() - new Date(a.createTime).getTime()
+      )
+    );
+  }, []);
+
+  const selectCurrentChatId = useCallback((id: string) => { setSelectedChatId(id) }, []);
 
   useEffect(() => {
     adjustHeight()
@@ -103,7 +167,9 @@ export default function ChatInterface() {
   const createNewChat = () => {
     const cantCreate = chats.some(chat => {
       if(chat.messages.length === 0) {
-        setSelectedChatId(chat.id)
+        if(chat.id !== selectedChatId){//only change it if it needs to be changed 
+          setSelectedChatId(chat.id)
+        }
         return true
       }
     }) 
@@ -115,10 +181,15 @@ export default function ChatInterface() {
       messages: [],
       createTime:new Date().toISOString()
     };
-    setChats(prev => [...prev, newChat].sort( (a,b)=>new Date(b.createTime).getTime() - new Date(a.createTime).getTime()));
+    setChats(prev => [...prev, newChat]);
     setSelectedChatId(id);
     setQuestion("");
   };
+
+  const selectedChat = useMemo(
+    () => chats.find(chat => chat.id === selectedChatId),
+    [chats, selectedChatId]
+  );
 
   return (
     <div className={`flex h-screen ${isDark ? "dark" : ""}`}>
@@ -154,28 +225,9 @@ export default function ChatInterface() {
         {/* Spacer */}
         <div className="overflow overflow-auto flex-1">
         <div className="p-4">
-          {[...chats].sort((a, b) => new Date(b.createTime).getTime() - new Date(a.createTime).getTime())
-            .map(chat => {
+          {sortedChats.map(chat => {
             if(chat.title != null){
-              return <button
-                key={chat.id}
-                onClick={() => {
-                  setSelectedChatId(chat.id)
-                  chats.some(element => {
-                    if(element.id === chat.id) {
-                      return true
-                    }
-                  })
-                }
-                }
-                className={`cursor cursor-pointer block w-full text-left text-sm px-2 py-2 rounded-lg ${
-                  chat.id === selectedChatId ? "bg-gray-800" : "hover:bg-gray-800"
-                }`}
-              >
-                <div className="truncate">
-                  <span className="overflow-hidden text-ellipsis text-sm ">{chat.title}</span>
-                </div>
-              </button>
+              return <ChatTitle key={chat.id} chatId={chat.id} selectedChatId={selectedChatId?selectedChatId:''} title={chat.title} changeTitle={changeTitle} selectCurrentChatId={selectCurrentChatId} ></ChatTitle>
             }
           })}
         </div>
@@ -219,11 +271,16 @@ export default function ChatInterface() {
             </div>
           </div>
         )}
-        {chats.map(chat => {
-          if(chat.id === selectedChatId) return <Thread key={chat.id} chatId={chat.id} onNewMessage={onNewMessage} parentMessages={chat.messages} />
-          return 
-        })
-        }
+        {selectedChat && (
+          <Thread
+            key={selectedChat.id}
+            chatId={selectedChat.id}
+            parentMessages={selectedChat.messages}
+            onNewMessage={onNewMessage}
+            appendChunkToLastMessage={appendChunkToLastMessage}
+            createNewAssistantMessage={createNewAssistantMessage}
+          />
+        )}
       </div>
     </div>
   )
