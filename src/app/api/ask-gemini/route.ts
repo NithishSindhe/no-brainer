@@ -14,8 +14,7 @@ export async function POST(req: NextRequest) {
   const { userId } = await auth();
   if (!userId) {
     return new Response('Hi there! Please sign in to start using the app.', { status: 401 });
-  }
-  else{
+  } else{
     const user = await currentUser();
     console.log('authenticated user:',user?.emailAddresses[0]?.emailAddress)
   }
@@ -66,7 +65,6 @@ export async function POST(req: NextRequest) {
     headers: {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
-      //'Transfer-Encoding': 'chunked',
       'Connection': 'keep-alive'
     },
   });

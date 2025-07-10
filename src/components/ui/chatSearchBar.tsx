@@ -3,9 +3,10 @@
 import { useEffect, useRef } from "react"
 import { Search } from "lucide-react"
 import { Input } from "~/components/ui/input"
+import React from "react"
 
 const isMac = navigator.userAgent.includes("Mac")
-export default function ChatSearchBar() {
+export default React.memo(function ChatSearchBar() {
   const chatSearchRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
@@ -74,4 +75,4 @@ export default function ChatSearchBar() {
       </div>
     </div>
   )
-}
+})
