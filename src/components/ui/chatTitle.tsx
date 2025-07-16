@@ -59,7 +59,7 @@ export default React.memo(function ChatTitle({chatId,selectedChatId,title,change
             e.stopPropagation();
             setIsEditing(true);
           }}
-          className="invisible group-hover:visible p-1 rounded-md hover:bg-gray-700 flex-shrink-0"
+          className="visible sm:invisible sm:group-hover:visible p-1 rounded-md hover:bg-gray-700 flex-shrink-0"
           aria-label={`Edit chat title: ${title}`}
         >
           <Pencil className="cursor-pointer h-4 w-4 text-gray-400" />
