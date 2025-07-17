@@ -3,11 +3,10 @@ import type React from "react"
 
 import { useEffect, useRef, useMemo, useCallback } from "react"
 import { LogInIcon } from "lucide-react"
-import { SignInButton, SignedIn, SignedOut, UserButton, } from '@clerk/nextjs'
+import { SignInButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs'
 import { useUser } from '@clerk/nextjs';
 import Thread from "~/components/ui/thread";
 import ChatTitle from "~/components/ui/chatTitle";
-
 
 import { useState } from "react"
 import {
@@ -17,6 +16,7 @@ import {
 } from "lucide-react"
 import { Button } from "~/components/ui/button"
 import ChatSearchBar from "~/components/ui/chatSearchBar"
+import EnsureUserSync from "~/hooks/ensureUserSync";
 
 import type { Message } from "~/components/ui/chatMessage"
 
@@ -192,15 +192,19 @@ export default function ChatInterface() {
   );
 
   return (
-    <div className={`flex h-screen ${isDark ? "dark" : ""}`}>
+    <div className={`flex h-[100dvh] w-full max-w-full ${isDark ? "dark" : ""}`}>
       {/* Sidebar */}
-      <div className={`${sidebarOpen ? "w-64 opacity-100" : "w-0 opacity-0"} 
+      <div className={`
+        ${sidebarOpen ? "w-64 opacity-100" : "w-0 opacity-0"}
         transition-all duration-300 ease-in-out
+        sm:relative absolute
         text-nowrap
-        bg-gray-900 border-r border-gray-700 flex flex-col overflow-hidden`} 
+        bg-gray-900 border-r border-gray-700 flex flex-col overflow-hidden
+        h-full z-40
+        `} 
       >
         {/* Sidebar Header */}
-        <div className="p-4 ">
+        <div className="p-4">
           <div className="flex items-center justify-between mb-4">
             <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-1 hover:bg-gray-800 rounded">
               <Menu className="w-5 h-5 text-gray-400" />
@@ -243,6 +247,7 @@ export default function ChatInterface() {
               </SignInButton>
             </SignedOut>
             <SignedIn>
+              <EnsureUserSync/>
               <div className="flex items-center gap-2">
                 <UserButton />
                 <div className="text-white text-sm font-medium">
@@ -253,8 +258,7 @@ export default function ChatInterface() {
           </div>
         </div>
       </div>
-      {/* Main Content */}
-      <div className="relative flex-1 bg-gray-800 flex flex-col">
+      <div className="relative flex-1 w-full bg-gray-800 flex flex-col overflow-hidden">
         {/* Header */}
         {!sidebarOpen && (
           <div className="p-4 border-none border-gray-700 flex items-center justify-between fixed top-0 left-0 right-0 z-50 bg-transparent">
@@ -265,9 +269,9 @@ export default function ChatInterface() {
             <div className="flex items-center gap-2">
               <button className="p-1 hover:bg-gray-700 rounded">
               </button>
-              <button onClick={() => setIsDark(!isDark)} className="p-1 hover:bg-gray-700 rounded">
-                {isDark ? <Sun className="w-4 h-4 text-gray-400" /> : <Moon className="w-4 h-4 text-gray-400" />}
-              </button>
+              {/* <button onClick={() => setIsDark(!isDark)} className="p-1 hover:bg-gray-700 rounded"> */}
+              {/*   {isDark ? <Sun className="w-4 h-4 text-gray-400" /> : <Moon className="w-4 h-4 text-gray-400" />} */}
+              {/* </button> */}
             </div>
           </div>
         )}

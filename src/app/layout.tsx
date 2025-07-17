@@ -3,12 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import {
   ClerkProvider,
-  SignInButton,
-  SignUpButton,
-  SignedIn,
-  SignedOut,
-  UserButton,
 } from '@clerk/nextjs'
+import QueryProvider from './query-provider';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,7 +30,9 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+          <QueryProvider>
             {children}
+          </QueryProvider>
         </body>
       </html>
     </ClerkProvider>

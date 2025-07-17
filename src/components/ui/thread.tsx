@@ -1,5 +1,5 @@
 "use client";
-import askGeminiBackground from "~/lib/askGeminiBackground";
+import askGeminiBackground from "~/hooks/askGeminiBackground";
 import { useEffect,useState,useRef,useCallback,useMemo } from "react"
 import { useUser } from '@clerk/nextjs';
 import { Search, Paperclip, ChevronDown, Sparkles, Compass, Code, GraduationCap, SendHorizontal, StopCircle } from "lucide-react"
@@ -165,9 +165,9 @@ export default React.memo(function Thread({ chatId, onNewMessage, parentMessages
       )}
     </div>
   </div>
-  <div className="absolute rounded-t-lg bottom-0 left-0 right-0 mx-auto max-w-4xl z-10 border-none backdrop-blur-sm bg-black/10 p-4 pb-0">
+  <div className="absolute rounded-t-lg bottom-0 left-0 right-0 mx-auto max-w-4xl z-10 border-none backdrop-blur-xs bg-black/10 p-4 pb-0">
     {/* Message Input */}
-    <div className="max-w-4xl mx-auto backdrop-blur-sm bg-black/10 rounded-t-lg">
+    <div className="max-w-4xl mx-auto backdrop-blur-xs bg-black/10 rounded-t-lg">
       <form onSubmit={handleSendMessage}>
         <div className="relative">
           <textarea
@@ -198,7 +198,7 @@ export default React.memo(function Thread({ chatId, onNewMessage, parentMessages
 
             {/* Model dropdown menu */}
             {modelModalOpen && (
-              <div className="absolute bottom-full mb-2 left-0 z-50 w-56 p-3 rounded-lg backdrop-blur-md bg-gray-800/70 border border-gray-700 shadow-lg">
+              <div className="absolute bottom-full mb-2 left-0 z-50 w-56 p-3 rounded-lg backdrop-blur-sm bg-gray-800/70 border border-gray-700 shadow-lg">
                 <button
                   onClick={() => {
                     setAiModel('gemini-2.5-flash');
