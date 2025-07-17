@@ -3,11 +3,10 @@ import type React from "react"
 
 import { useEffect, useRef, useMemo, useCallback } from "react"
 import { LogInIcon } from "lucide-react"
-import { SignInButton, SignedIn, SignedOut, UserButton, } from '@clerk/nextjs'
+import { SignInButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs'
 import { useUser } from '@clerk/nextjs';
 import Thread from "~/components/ui/thread";
 import ChatTitle from "~/components/ui/chatTitle";
-
 
 import { useState } from "react"
 import {
@@ -17,6 +16,7 @@ import {
 } from "lucide-react"
 import { Button } from "~/components/ui/button"
 import ChatSearchBar from "~/components/ui/chatSearchBar"
+import EnsureUserSync from "~/hooks/ensureUserSync";
 
 import type { Message } from "~/components/ui/chatMessage"
 
@@ -247,6 +247,7 @@ export default function ChatInterface() {
               </SignInButton>
             </SignedOut>
             <SignedIn>
+              <EnsureUserSync/>
               <div className="flex items-center gap-2">
                 <UserButton />
                 <div className="text-white text-sm font-medium">

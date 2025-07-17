@@ -1,5 +1,5 @@
 "use client";
-import askGeminiBackground from "~/lib/askGeminiBackground";
+import askGeminiBackground from "~/hooks/askGeminiBackground";
 import { useEffect,useState,useRef,useCallback,useMemo } from "react"
 import { useUser } from '@clerk/nextjs';
 import { Search, Paperclip, ChevronDown, Sparkles, Compass, Code, GraduationCap, SendHorizontal, StopCircle } from "lucide-react"
